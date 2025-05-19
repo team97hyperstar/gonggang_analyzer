@@ -63,4 +63,11 @@ if st.button("🚀 공강 시간 분석하기"):
         data.append(row)
 
     df_timetable = pd.DataFrame(data)
-    st.dataframe(df_timetable, height=700)
+
+    # 스타일링 함수 정의
+    def highlight_free(val):
+        return "background-color: lightgreen" if val == "공강" else ""
+
+    styled_df = df_timetable.style.applymap(highlight_free, subset=days)
+
+    st.dataframe(styled_df, height=700)
