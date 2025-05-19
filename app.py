@@ -2,6 +2,7 @@ import streamlit as st
 from collections import defaultdict
 from datetime import datetime, timedelta
 import pandas as pd
+import json
 
 st.set_page_config(page_title="공강 분석기", layout="wide")
 st.title("🧠 사용자별 공강 시간 분석기")
@@ -52,6 +53,24 @@ if name:
     if st.button("✅ 시간표 등록", key=f"submit_{name}"):
         st.session_state["schedules"][name] = user_schedule
         st.success(f"✅ {name}님의 시간표가 저장되었습니다!")
+
+# 💾 시간표 전체 저장 (JSON 파일로)
+if st.button("💾 시간표 전체 저장"):
+    with open("saved_schedules.json", "w", encoding="utf-8") as f:
+        json.dump(st.session_state["schedules"], f, ensure_ascii=False)
+    st.success("✅ 시간표가 saved_schedules.json 파일로 저장되었습니다.")
+
+# 📂 시간표 불러오기
+st.markdown("### 📂 저장된 시간표 불러오기")
+uploaded = st.file_uploader("저장된 JSON 파일 업로드", type="json")
+
+if uploaded:
+    try:
+        data = json.load(uploaded)
+        st.session_state["schedules"] = data
+        st.success("✅ 시간표를 성공적으로 불러왔습니다!")
+    except:
+        st.error("❌ JSON 파일 형식이 올바르지 않습니다.")
 
 # 👀 등록된 사용자 목록 출력
 if st.session_state["schedules"]:
