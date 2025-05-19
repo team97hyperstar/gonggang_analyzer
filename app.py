@@ -1,11 +1,12 @@
 import streamlit as st
 from collections import defaultdict
 from datetime import datetime, timedelta
+import pandas as pd
 
 st.set_page_config(page_title="공강 분석기", layout="wide")
 st.title("🧠 공강 시간 자동 분석기")
 
-# 요일과 15분 단위 시간 목록 생성
+# 요일 및 15분 단위 시간 생성
 days = ["월", "화", "수", "목", "금"]
 start_time = datetime.strptime("09:00", "%H:%M")
 end_time = datetime.strptime("21:00", "%H:%M")
@@ -17,7 +18,7 @@ while current <= end_time:
     time_slots.append(current.strftime("%H:%M"))
     current += interval
 
-# 시간 구간 생성 함수
+# 시작-종료 시간 범위 생성 함수
 def get_time_range(start, end):
     start_dt = datetime.strptime(start, "%H:%M")
     end_dt = datetime.strptime(end, "%H:%M")
@@ -27,13 +28,13 @@ def get_time_range(start, end):
         start_dt += timedelta(minutes=15)
     return times
 
-# 사용자 입력
+# 팀원 수 입력
 st.markdown("### 👥 팀원 수를 입력하고, 각자 시간표를 입력하세요.")
 num_members = st.number_input("팀원 수", min_value=1, max_value=10, value=2)
 
 all_busy = defaultdict(set)
 
-# 팀원별 시간표 입력
+# 시간표 입력
 for i in range(num_members):
     st.subheader(f"🧍 팀원 {i+1} 시간표")
     for day in days:
@@ -48,23 +49,18 @@ for i in range(num_members):
                 for t in get_time_range(start, end):
                     all_busy[(day, t)].add(i)
 
-# 분석 및 결과 표시
+# 분석 및 표 출력
 if st.button("🚀 공강 시간 분석하기"):
     st.success("공강 시간 분석 완료!")
-    st.markdown("### ✅ 공통 공강 시간 (모든 팀원이 가능한 시간)")
-    result_table = []
-    for day in days:
-        row = []
-        for t in time_slots:
-            busy = all_busy.get((day, t), set())
-            if len(busy) == 0:
-                row.append("🟢")
-            elif len(busy) < num_members:
-                row.append("🟡")
-            else:
-                row.append("🔴")
-        result_table.append(row)
+    st.markdown("### ✅ 모두 공강인 시간만 표시된 시간표")
 
-    st.write("🟢 모두 공강 | 🟡 일부 공강 | 🔴 수업 있음")
-    table_dict = {day: row for day, row in zip(days, result_table)}
-    st.dataframe(table_dict, height=500)
+    data = []
+    for t in time_slots:
+        row = {"시간": t}
+        for day in days:
+            busy = all_busy.get((day, t), set())
+            row[day] = "공강" if len(busy) == 0 else ""
+        data.append(row)
+
+    df_timetable = pd.DataFrame(data)
+    st.dataframe(df_timetable, height=700)
